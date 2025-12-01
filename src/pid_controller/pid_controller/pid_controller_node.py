@@ -3,7 +3,9 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32
 
-class PIDController(Node):
+from pid_controller.PIDController import PIDController
+
+class PIDControllerNode(Node):
     def __init__(self):
         super().__init__('pid_controller')
         self.get_logger().info("PID Controller başlatıldı")
@@ -15,9 +17,7 @@ class PIDController(Node):
 
         self.dt = 0.01
 
-        # PID durum
-        self.integral = 0.0
-        self.prev_error = 0.0
+        self.pid = PIDController(self.Kp, self.Ki, self.Kd, self.dt)
 
         # Hedef açı
         self.theta_setpoint = 0.2
@@ -32,14 +32,9 @@ class PIDController(Node):
 
     def theta_callback(self, msg):
         theta = msg.data
-        error = self.theta_setpoint - theta
 
         # PID hesaplama
-        self.integral += error * self.dt
-        derivative = (error - self.prev_error) / self.dt
-        self.prev_error = error
-
-        u = self.Kp * error + self.Ki * self.integral + self.Kd * derivative
+        u = self.pid.compute(self.theta_setpoint,theta)
 
         # PID çıktısını motor kuvvetlerine dönüştür
         F_total = 10.0  # Toplam kuvvet, drone ağırlığını karşılamak için baz
@@ -64,7 +59,7 @@ class PIDController(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = PIDController()
+    node = PIDControllerNode()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()

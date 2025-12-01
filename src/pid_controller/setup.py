@@ -24,7 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'pid_controller = pid_controller.pid_controller:main',
+            'pid_controller_node = pid_controller.pid_controller_node:main',
         ],
     },
 )
