@@ -2,6 +2,8 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32
+from rclpy.parameter import Parameter
+from rcl_interfaces.msg import SetParametersResult
 
 from pid_controller.PIDController import PIDController
 
@@ -10,17 +12,25 @@ class PIDControllerNode(Node):
         super().__init__('pid_controller')
         self.get_logger().info("PID Controller başlatıldı")
 
-        # PID parametreleri
-        self.Kp = 3.0
-        self.Ki = 0.0
-        self.Kd = 1.0
+        # ======================
+        # Parametreleri declare et
+        # ======================
+        self.declare_parameter('Kp', 3.0)
+        self.declare_parameter('Ki', 0.0)
+        self.declare_parameter('Kd', 1.0)
 
+        # Parametreleri al
+        self.Kp = self.get_parameter('Kp').value
+        self.Ki = self.get_parameter('Ki').value
+        self.Kd = self.get_parameter('Kd').value
+
+        # Hedef açı
+        self.theta_setpoint = 0.0
+
+        #Simulasyon güncelleme süresi
         self.dt = 0.01
 
         self.pid = PIDController(self.Kp, self.Ki, self.Kd, self.dt)
-
-        # Hedef açı
-        self.theta_setpoint = 0.2
 
         # Publisher
         self.pub_F1 = self.create_publisher(Float32, '/motor1/F1', 10)
@@ -29,6 +39,27 @@ class PIDControllerNode(Node):
         # Subscriber
         self.create_subscription(Float32, '/theta', self.theta_callback, 10)
         self.create_subscription(Float32, '/cmd', self.cmd_callback, 10)
+
+        self.add_on_set_parameters_callback(self.parameter_update_callback)
+
+    # =====================================
+    # ROS2 parameter değişince çağrılır
+    # =====================================
+    def parameter_update_callback(self, params):
+        for param in params:
+            if param.name == 'Kp' and param.type_ == Parameter.Type.DOUBLE:
+                self.pid.Kp = param.value
+                self.get_logger().info(f"Kp güncellendi: {param.value}")
+            elif param.name == 'Ki' and param.type_ == Parameter.Type.DOUBLE:
+                self.pid.Ki = param.value
+                self.get_logger().info(f"Ki güncellendi: {param.value}")
+            elif param.name == 'Kd' and param.type_ == Parameter.Type.DOUBLE:
+                self.pid.Kd = param.value
+                self.get_logger().info(f"Kd güncellendi: {param.value}")
+            elif param.name == 'setpoint' and param.type_ == Parameter.Type.DOUBLE:
+                self.theta_setpoint = param.value
+                self.get_logger().info(f"Setpoint güncellendi: {param.value}")
+        return SetParametersResult(successful=True)
 
     def theta_callback(self, msg):
         theta = msg.data
