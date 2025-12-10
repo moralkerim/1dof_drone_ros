@@ -32,19 +32,19 @@ class PIDControllerNode(Node):
 
         self.pid = PIDController(self.Kp, self.Ki, self.Kd, self.dt)
 
-        # Publisher
-        self.pub_F1 = self.create_publisher(Float32, '/motor1/F1', 10)
-        self.pub_F2 = self.create_publisher(Float32, '/motor2/F2', 10)
+        #==============================================
+        # /motor1/F1 topic'i için publisher oluştur.
+        # /motor1/F2 topic'i için publisher oluştur.
+        #==============================================
 
-        # Subscriber
-        self.create_subscription(Float32, '/theta', self.theta_callback, 10)
-        self.create_subscription(Float32, '/cmd', self.cmd_callback, 10)
+        #==============================================
+        # /theta topic'i için subscriber oluştur, theta_callback() fonksiyonuna bağla.
+        # /cmd topic'i için subscriber oluştur, cmd_callback() fonksiyonuna bağla.
+        #==============================================
 
         self.add_on_set_parameters_callback(self.parameter_update_callback)
 
-    # =====================================
-    # ROS2 parameter değişince çağrılır
-    # =====================================
+
     def parameter_update_callback(self, params):
         for param in params:
             if param.name == 'Kp' and param.type_ == Parameter.Type.DOUBLE:
@@ -76,14 +76,11 @@ class PIDControllerNode(Node):
         F1 = max(0.0, F1)
         F2 = max(0.0, F2)
 
-        # Publish et
-        msg_F1 = Float32()
-        msg_F1.data = F1
-        self.pub_F1.publish(msg_F1)
 
-        msg_F2 = Float32()
-        msg_F2.data = F2
-        self.pub_F2.publish(msg_F2)
+        #==============================================
+        # F1 ve F2 kuvvetleri için Float32 tipinde mesaj (msg) değişkenleri oluştur, 
+        # mesajın içini doldur ve ilgili publisher'lar ile publish et.
+        #==============================================
 
     def cmd_callback(self, msg):
         self.theta_setpoint = msg.data
